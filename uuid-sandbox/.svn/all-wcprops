@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/spring-integration/!svn/ver/3441/sandbox/uuid-sandbox
+END
+.classpath
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/spring-integration/!svn/ver/3442/sandbox/uuid-sandbox/.classpath
+END
+.project
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/spring-integration/!svn/ver/3442/sandbox/uuid-sandbox/.project
+END
+pom.xml
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/spring-integration/!svn/ver/3442/sandbox/uuid-sandbox/pom.xml
+END
