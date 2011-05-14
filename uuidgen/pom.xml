@@ -1,11 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>uuid-sandbox</groupId>
-	<artifactId>uuid-sandbox</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<groupId>org.olegz</groupId>
+	<artifactId>uuidgen</artifactId>
+	<version>0.1</version>
 	<properties>
-		<spring.version>3.0.3.RELEASE</spring.version>
+		<spring.version>3.0.5.RELEASE</spring.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -16,27 +16,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
-			<artifactId>spring-beans</artifactId>
-			<version>${spring.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-aop</artifactId>
-			<version>${spring.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-context</artifactId>
-			<version>${spring.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
 			<artifactId>spring-core</artifactId>
-			<version>${spring.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-test</artifactId>
 			<version>${spring.version}</version>
 			<scope>test</scope>
 		</dependency>

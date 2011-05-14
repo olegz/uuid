@@ -15,17 +15,13 @@
  */
 package org.olegz.uuid;
 
-import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.olegz.uuid.TimeBasedUUIDGenerator;
 
 import org.springframework.util.StopWatch;
 
@@ -34,26 +30,31 @@ import org.springframework.util.StopWatch;
  *
  */
 public class TimeBasedUUIDGeneratorTests {
-	private long  macAddressAsLong = 0;
-
+	
 	@Test
 	public void testGreaterThen(){
 		UUID id = TimeBasedUUIDGenerator.generateId();
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 100000; i++) {
 			UUID newId = TimeBasedUUIDGenerator.generateId();
 			// tests, that newly created UUID is always greater then the previous one.
 			Assert.assertTrue(newId.compareTo(id) >= 0);
 			id = newId;
 		}
 	}
+	/**
+	 * Tests that UUID which was generated based on the same timestamp will still be unique
+	 * based on the clockSequence. Theoretically there is a possibility of non-unique ID,
+	 * but only if more then 16383 ids were generated at the same time by the same machine.
+	 */
 	@Test
 	public void testUniqueness(){
 		long timestamp = System.currentTimeMillis();
 		UUID id = TimeBasedUUIDGenerator.generateIdFromTimestamp(timestamp);
-		for (int i = 0; i < 32000; i++) { //32767 max
-			UUID newId = TimeBasedUUIDGenerator.generateIdFromTimestamp(timestamp);
-			// tests, that newly created UUID is always greater then the previous one.
-			Assert.assertTrue(newId.compareTo(id) == 1);
+		UUID newId = null;
+		for (int i = 0; i < 16383; i++) { // max, due to the amount of bits allocated for clockSequence
+			newId = TimeBasedUUIDGenerator.generateIdFromTimestamp(timestamp);
+			// tests, that newly created UUID's clockSequence is always greater then the previous one.
+			Assert.assertTrue(newId.clockSequence() > id.clockSequence());
 			Assert.assertEquals(newId.timestamp(), id.timestamp());
 			id = newId;
 		}
@@ -67,32 +68,32 @@ public class TimeBasedUUIDGeneratorTests {
 			id = newId;
 		}
 		Assert.assertEquals(timestamp, id.timestamp());
-		Assert.assertEquals(macAddressAsLong, id.node());
 	}
+	
 	@Test
 	public void performanceTestSynch(){
 		StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
-		for (int i = 0; i < 100000; i++) {
+		for (int i = 0; i < 1000000; i++) {
 			TimeBasedUUIDGenerator.generateId();
 		}
 		stopWatch.stop();
-		System.out.println("Generated 100000 UUID (sync) via TimeBasedUUIDGenerator.generateId(): in " + stopWatch.getTotalTimeSeconds() + " seconds");
+		System.out.println("Generated 1000000 UUID (sync) via TimeBasedUUIDGenerator.generateId(): in " + stopWatch.getTotalTimeSeconds() + " seconds");
 		
 		stopWatch = new StopWatch();
 		stopWatch.start();
-		for (int i = 0; i < 100000; i++) {
+		for (int i = 0; i < 1000000; i++) {
 			UUID.randomUUID();
 		}
 		stopWatch.stop();
-		System.out.println("Generated 100000 UUID  (sync) via UUID.randomUUID(): in " + stopWatch.getTotalTimeSeconds() + " seconds");
+		System.out.println("Generated 1000000 UUID  (sync) via UUID.randomUUID(): in " + stopWatch.getTotalTimeSeconds() + " seconds");
 	}
 	@Test
 	public void performanceTestAsynch() throws Exception {
 		ExecutorService executor = Executors.newFixedThreadPool(100);
 		StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
-		for (int i = 0; i < 100000; i++) {
+		for (int i = 0; i < 1000000; i++) {
 			executor.execute(new Runnable() {
 				public void run() {
 					TimeBasedUUIDGenerator.generateId();
@@ -102,12 +103,12 @@ public class TimeBasedUUIDGeneratorTests {
 		executor.shutdown();
 		executor.awaitTermination(10, TimeUnit.SECONDS);
 		stopWatch.stop();
-		System.out.println("Generated 100000 UUID (async) via TimeBasedUUIDGenerator.generateId(): in " + stopWatch.getTotalTimeSeconds() + " seconds");
+		System.out.println("Generated 1000000 UUID (async) via TimeBasedUUIDGenerator.generateId(): in " + stopWatch.getTotalTimeSeconds() + " seconds");
 		
 		executor = Executors.newFixedThreadPool(100);
 		stopWatch = new StopWatch();
 		stopWatch.start();
-		for (int i = 0; i < 100000; i++) {
+		for (int i = 0; i < 1000000; i++) {
 			executor.execute(new Runnable() {
 				public void run() {
 					UUID.randomUUID();
@@ -117,26 +118,6 @@ public class TimeBasedUUIDGeneratorTests {
 		executor.shutdown();
 		executor.awaitTermination(10, TimeUnit.SECONDS);
 		stopWatch.stop();
-		System.out.println("Generated 100000 UUID (async) via UUID.randomUUID(): in " + stopWatch.getTotalTimeSeconds() + " seconds");
-	}
-	@Before
-	public void prepare(){
-		
-		try {
-			InetAddress address = InetAddress.getLocalHost();
-			NetworkInterface ni = NetworkInterface.getByInetAddress(address);
-			if (ni != null) {
-				byte[] mac = ni.getHardwareAddress();
-				//Converts array of unsigned bytes to an long
-				if (mac != null) {
-					for (int i = 0; i < mac.length; i++) {					
-						macAddressAsLong <<= 8;
-						macAddressAsLong ^= (long)mac[i] & 0xFF;
-					}
-				}
-			} 
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		System.out.println("Generated 1000000 UUID (async) via UUID.randomUUID(): in " + stopWatch.getTotalTimeSeconds() + " seconds");
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2010 the original author or authors.
+ * Copyright 2002-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,54 +17,23 @@ package org.olegz.uuid;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.util.Random;
 import java.util.UUID;
-import java.util.logging.Logger;
 
 /**
  * Will generate time-based UUID (version 1 UUID).
- * This will allow Message ID to be unique but also contain an 
- * embedded timestamp which could be retrieved via UUID.timestamp()
+ * Requires JDK 1.6+
  * 
  * @author Oleg Zhurakousky
  */
-class TimeBasedUUIDGenerator {
+public class TimeBasedUUIDGenerator {
 
-	private static final Logger logger = Logger.getLogger(TimeBasedUUIDGenerator.class.getName());
-	
 	public static final Object lock = new Object();
 	
-	private static boolean canNotDetermineMac = true;
 	private static long lastTime;
 	private static long clockSequence = 0;
-	private static final long macAddress = getMac();
-	private static final String binaryMacAddress = Long.toBinaryString(macAddress);
+	private static final long hostIdentifier = getHostId();
 	
-	/*
-	 * s
-	 */
-	private static final long getMac(){
-		long  macAddressAsLong = 0;
-		try {
-			InetAddress address = InetAddress.getLocalHost();
-			NetworkInterface ni = NetworkInterface.getByInetAddress(address);
-			if (ni != null) {
-				byte[] mac = ni.getHardwareAddress();
-				//Converts array of unsigned bytes to an long
-				if (mac != null) {
-					for (int i = 0; i < mac.length; i++) {					
-						macAddressAsLong <<= 8;
-						macAddressAsLong ^= (long)mac[i] & 0xFF;
-					}
-				}
-			} 
-			canNotDetermineMac = false;
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		System.out.println("mac: " + Long.toBinaryString(macAddressAsLong));
-		return macAddressAsLong;
-	}
-
 	/**
 	 * Will generate unique time based UUID where the next UUID is 
 	 * always greater then the previous.
@@ -84,7 +53,6 @@ class TimeBasedUUIDGenerator {
 				++clockSequence; 
 			}
 		}
-		
 	
 		time = currentTimeMillis;
 		
@@ -95,20 +63,36 @@ class TimeBasedUUIDGenerator {
 		time |= ((currentTimeMillis & 0xFFFF00000000L) >> 16);
 
 		// hi Time
-		time |= 0x1000 | ((currentTimeMillis >> 48) & 0x0FFF); // version 1
+		time |= 0x1000 | ((currentTimeMillis >> 48) & 0x0FFF); 
 		
-		long clock_seq_hi_and_reserved = clockSequence;  
+		long clockSequenceHi = clockSequence;  
     	
-    	clock_seq_hi_and_reserved <<=48;	
-  
-    	long cls = 0 | clock_seq_hi_and_reserved;
+		clockSequenceHi <<=48;	
     	
-		long lsb = cls | macAddress;
-		if (canNotDetermineMac){
-			logger.warning("UUID generation process was not able to determine your MAC address. Returning random UUID (non version 1 UUID)");
-			return UUID.randomUUID();
-		} else {
-			return new UUID(time, lsb);
+		long lsb = clockSequenceHi | hostIdentifier;
+		
+		return new UUID(time, lsb);
+	}
+	private static final long getHostId(){
+		long  macAddressAsLong = 0;
+		try {
+			Random random = new Random();
+			InetAddress address = InetAddress.getLocalHost();
+			NetworkInterface ni = NetworkInterface.getByInetAddress(address);
+			if (ni != null) {
+				byte[] mac = ni.getHardwareAddress();
+				random.nextBytes(mac); // we don't really want to reveal the actual MAC address
+				//Converts array of unsigned bytes to an long
+				if (mac != null) {
+					for (int i = 0; i < mac.length; i++) {					
+						macAddressAsLong <<= 8;
+						macAddressAsLong ^= (long)mac[i] & 0xFF;
+					}
+				}
+			} 
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
+		return macAddressAsLong;
 	}
 }
